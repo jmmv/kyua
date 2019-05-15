@@ -56,20 +56,15 @@ public:
     /// List of possible types for the test case result.
     enum types {
         broken,
-        successful,
-        skipped,
+        disabled,
         failed,
-        disabled
+        skipped,
+        successful,
     };
 
 private:
     /// The test case result.
     types _type;
-
-    /// The optional integral argument that may accompany the result.
-    ///
-    /// Should only be present if the type is expected_exit or expected_signal.
-    utils::optional< int > _argument;
 
     /// A description of the test case result.
     ///
@@ -80,14 +75,11 @@ private:
 public:
     googletest_result(const types);
     googletest_result(const types, const std::string&);
-    googletest_result(const types, const utils::optional< int >&,
-        const std::string&);
 
     static googletest_result parse(std::istream&);
     static googletest_result load(const utils::fs::path&);
 
     types type(void) const;
-    const utils::optional< int >& argument(void) const;
     const utils::optional< std::string >& reason(void) const;
 
     bool good(void) const;

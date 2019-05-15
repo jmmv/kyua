@@ -58,19 +58,16 @@ namespace {
 /// Performs a test for results::parse() that should succeed.
 ///
 /// \param exp_type The expected type of the result.
-/// \param exp_argument The expected argument in the result, if any.
 /// \param exp_reason The expected reason describing the result, if any.
 /// \param text The literal input to parse; can include multiple lines.
 static void
 parse_ok_test(const engine::googletest_result::types& exp_type,
-              const optional< int >& exp_argument,
               const char* exp_reason, const char* text)
 {
     std::istringstream input(text);
     const engine::googletest_result actual =
         engine::googletest_result::parse(input);
     ATF_REQUIRE_EQ(exp_type, actual.type());
-    ATF_REQUIRE_EQ(exp_argument, actual.argument());
     if (exp_reason != NULL) {
         ATF_REQUIRE(actual.reason());
         ATF_REQUIRE_EQ(exp_reason, actual.reason().get());
@@ -85,14 +82,13 @@ parse_ok_test(const engine::googletest_result::types& exp_type,
 /// \param name The name of the test case; will be prefixed with
 ///     "googletest_result__parse__".
 /// \param exp_type The expected type of the result.
-/// \param exp_argument The expected argument in the result, if any.
 /// \param exp_reason The expected reason describing the result, if any.
 /// \param input The literal input to parse.
-#define PARSE(name, exp_type, exp_argument, exp_reason, input) \
+#define PARSE(name, exp_type, exp_reason, input) \
     ATF_TEST_CASE_WITHOUT_HEAD(googletest_result__parse__ ## name); \
     ATF_TEST_CASE_BODY(googletest_result__parse__ ## name) \
     { \
-        parse_ok_test(exp_type, exp_argument, exp_reason, input); \
+        parse_ok_test(exp_type, exp_reason, input); \
     }
 
 
@@ -100,7 +96,7 @@ parse_ok_test(const engine::googletest_result::types& exp_type,
 
 
 PARSE(broken,
-      engine::googletest_result::broken, none, "invalid output",
+      engine::googletest_result::broken, "invalid output",
       "invalid input");
 
 const char disabled_context[] = (
@@ -118,7 +114,7 @@ const char disabled_message[] = (
 );
 
 PARSE(disabled,
-      engine::googletest_result::disabled, none, disabled_context,
+      engine::googletest_result::disabled, disabled_context,
       disabled_message);
 
 const char failed_context[] = (
@@ -151,7 +147,7 @@ const char failed_message[] = (
 );
 
 PARSE(failed,
-      engine::googletest_result::failed, none, failed_context,
+      engine::googletest_result::failed, failed_context,
       failed_message);
 
 const char skipped_message[] = (
@@ -171,7 +167,7 @@ const char skipped_message[] = (
 );
 
 PARSE(skipped,
-      engine::googletest_result::skipped, none, NULL,
+      engine::googletest_result::skipped, NULL,
       skipped_message
 );
 
@@ -197,7 +193,7 @@ const char skipped_with_reason_message[] = (
 );
 
 PARSE(skipped_with_reason,
-      engine::googletest_result::skipped, none, skipped_with_reason_context,
+      engine::googletest_result::skipped, skipped_with_reason_context,
       skipped_with_reason_message);
 
 const char successful_message[] = (
@@ -215,7 +211,7 @@ const char successful_message[] = (
 );
 
 PARSE(successful,
-      engine::googletest_result::successful, none, NULL,
+      engine::googletest_result::successful, NULL,
       successful_message);
 
 const char successful_message2[] = (
@@ -233,7 +229,7 @@ const char successful_message2[] = (
 );
 
 PARSE(successful2,
-      engine::googletest_result::successful, none, NULL,
+      engine::googletest_result::successful, NULL,
       successful_message2);
 
 const char successful_parameterized_message[] = (
@@ -251,7 +247,7 @@ const char successful_parameterized_message[] = (
 );
 
 PARSE(successful_parameterized,
-      engine::googletest_result::successful, none, NULL,
+      engine::googletest_result::successful, NULL,
       successful_parameterized_message);
 
 const char successful_message_with_reason[] = (
@@ -270,7 +266,7 @@ const char successful_message_with_reason[] = (
 );
 
 PARSE(successful_with_reason,
-      engine::googletest_result::successful, none, NULL,
+      engine::googletest_result::successful, NULL,
       successful_message_with_reason);
 
 ATF_TEST_CASE_WITHOUT_HEAD(googletest_result__load__ok);
@@ -284,7 +280,6 @@ ATF_TEST_CASE_BODY(googletest_result__load__ok)
     const engine::googletest_result result = engine::googletest_result::load(
         utils::fs::path("result.txt"));
     ATF_REQUIRE_EQ(engine::googletest_result::skipped, result.type());
-    ATF_REQUIRE(!result.argument());
     ATF_REQUIRE(result.reason());
     ATF_REQUIRE_EQ(skipped_with_reason_context, result.reason().get());
 }

@@ -53,6 +53,13 @@ using utils::optional;
 
 namespace {
 
+const std::string invalid_output_message = "invalid output";
+const std::regex disabled_re(R"RE((YOU HAVE [[:digit:]]+ DISABLED TESTS?))RE");
+const std::regex starting_sentinel_re(
+    R"(\[[[:space:]]+RUN[[:space:]]+\][[:space:]]+[A-Za-z0-9]+\.[A-Za-z0-9]+)");
+const std::regex ending_sentinel_re(
+    R"RE(\[[[:space:]]+(FAILED|OK|SKIPPED)[[:space:]]+\])RE");
+
 /// Parses a test result that does not accept a reason.
 ///
 /// \param status The result status name.
@@ -131,7 +138,7 @@ format_status(const process::status& status)
 
 /// Constructs a raw result with a type.
 ///
-/// The reason and the argument are left uninitialized.
+/// The reason is left uninitialized.
 ///
 /// \param type_ The type of the result.
 engine::googletest_result::googletest_result(const types type_) :
@@ -142,36 +149,14 @@ engine::googletest_result::googletest_result(const types type_) :
 
 /// Constructs a raw result with a type and a reason.
 ///
-/// The argument is left uninitialized.
-///
 /// \param type_ The type of the result.
 /// \param reason_ The reason for the result.
-engine::googletest_result::googletest_result(const types type_,
-                               const std::string& reason_) :
+engine::googletest_result::googletest_result(
+    const types type_,
+    const std::string& reason_) :
     _type(type_), _reason(reason_)
 {
 }
-
-
-/// Constructs a raw result with a type, an optional argument and a reason.
-///
-/// \param type_ The type of the result.
-/// \param argument_ The optional argument for the result.
-/// \param reason_ The reason for the result.
-engine::googletest_result::googletest_result(const types type_,
-                               const utils::optional< int >& argument_,
-                               const std::string& reason_) :
-    _type(type_), _argument(argument_), _reason(reason_)
-{
-}
-
-
-const std::string invalid_output_message = "invalid output";
-const std::regex disabled_re(R"RE((YOU HAVE [[:digit:]]+ DISABLED TESTS?))RE");
-const std::regex starting_sentinel_re(
-    R"(\[[[:space:]]+RUN[[:space:]]+\][[:space:]]+[A-Za-z0-9]+\.[A-Za-z0-9]+)");
-const std::regex ending_sentinel_re(
-    R"RE(\[[[:space:]]+(FAILED|OK|SKIPPED)[[:space:]]+\])RE");
 
 
 /// Parses an input stream to extract a test result.
@@ -191,9 +176,6 @@ engine::googletest_result
 engine::googletest_result::parse(std::istream& input)
 {
     std::vector<std::string> lines;
-    std::smatch matches;
-    std::string context, googletest_res, status;
-    bool capture_context, valid_output;
 
     do {
         std::string line;
@@ -203,7 +185,11 @@ engine::googletest_result::parse(std::istream& input)
         lines.push_back(line);
     } while (input.good());
 
-    valid_output = false;
+    bool capture_context;
+    bool valid_output = false;
+    std::smatch matches;
+    std::string context, status;
+
     for (auto& line: lines) {
         if (regex_search(line, matches, disabled_re)) {
             context = matches[1];
@@ -217,7 +203,7 @@ engine::googletest_result::parse(std::istream& input)
             continue;
         }
         if (regex_search(line, matches, ending_sentinel_re)) {
-            googletest_res = matches[1];
+            std::string googletest_res = matches[1];
             if (googletest_res == "OK") {
                 context = "";
                 status = "successful";
@@ -272,16 +258,6 @@ engine::googletest_result::types
 engine::googletest_result::type(void) const
 {
     return _type;
-}
-
-
-/// Gets the optional argument of the result.
-///
-/// \return The argument of the result if present; none otherwise.
-const optional< int >&
-engine::googletest_result::argument(void) const
-{
-    return _argument;
 }
 
 
@@ -341,38 +317,46 @@ engine::googletest_result::apply(const optional< process::status >& status)
     }
 
     INV(status);
+    if (_type == googletest_result::broken) {
+        return *this;
+    }
+    if (_type == googletest_result::failed) {
+        if (status.get().exited() &&
+            status.get().exitstatus() == EXIT_FAILURE) {
+            return *this;
+        }
+    } else {
+        if (status.get().exited() &&
+            status.get().exitstatus() == EXIT_SUCCESS) {
+            return *this;
+        }
+    }
+
     switch (_type) {
     case googletest_result::broken:
-        return *this;
-
-    case googletest_result::failed:
-        if (status.get().exited() && status.get().exitstatus() == EXIT_FAILURE)
-            return *this;
-        return googletest_result(googletest_result::broken,
-            "Failed test case should have reported failure but " +
-            format_status(status.get()));
+        /// Tautilogically impossible case; however, clang 8.x doesn't realize
+        /// that this is not possible.
+        INV(false);
 
     case googletest_result::disabled:
-        if (status.get().exited() && status.get().exitstatus() == EXIT_SUCCESS)
-            return *this;
         return googletest_result(googletest_result::broken,
             "Disabled test case should have reported success but " +
             format_status(status.get()));
 
+    case googletest_result::failed:
+        return googletest_result(googletest_result::broken,
+            "Failed test case should have reported failure but " +
+            format_status(status.get()));
+
     case googletest_result::skipped:
-        if (status.get().exited() && status.get().exitstatus() == EXIT_SUCCESS)
-            return *this;
         return googletest_result(googletest_result::broken,
             "Skipped test case should have reported success but " +
             format_status(status.get()));
 
     case googletest_result::successful:
-        if (status.get().exited() && status.get().exitstatus() == EXIT_SUCCESS)
-            return *this;
         return googletest_result(googletest_result::broken,
             "Passed test case should have reported success but " +
             format_status(status.get()));
-
     }
 
     UNREACHABLE;
@@ -389,11 +373,11 @@ engine::googletest_result::externalize(void) const
     case googletest_result::broken:
         return model::test_result(model::test_result_broken, _reason.get());
 
-    case googletest_result::failed:
-        return model::test_result(model::test_result_failed, _reason.get());
-
     case googletest_result::disabled:
         return model::test_result(model::test_result_skipped, _reason.get());
+
+    case googletest_result::failed:
+        return model::test_result(model::test_result_failed, _reason.get());
 
     case googletest_result::skipped:
         return model::test_result(model::test_result_skipped, _reason.get());
@@ -415,7 +399,7 @@ engine::googletest_result::externalize(void) const
 bool
 engine::googletest_result::operator==(const googletest_result& other) const
 {
-    return _type == other._type && _argument == other._argument &&
+    return _type == other._type &&
         _reason == other._reason;
 }
 
@@ -450,13 +434,10 @@ engine::operator<<(std::ostream& output, const googletest_result& object)
     case googletest_result::successful: result_name = "successful"; break;
     }
 
-    const optional< int >& argument = object.argument();
-
     const optional< std::string >& reason = object.reason();
 
-    output << F("model::test_result{type=%s, argument=%s, reason=%s}")
+    output << F("model::test_result{type=%s, reason=%s}")
         % text::quote(result_name, '\'')
-        % (argument ? (F("%s") % argument.get()).str() : "none")
         % (reason ? text::quote(reason.get(), '\'') : "none");
 
     return output;

@@ -52,28 +52,23 @@ const std::string name_expr = "([[:alpha:][:digit:]_]+[[:alpha:][:digit:]_/]*)";
 const std::string testsuite_testcase_separator = ".";
 
 /// A complete regular expression representing a line with a test suite
-/// definition.
-///
-/// e.g.,
-///   "TestSuite."
-/// or
-///   "TestSuite/Prefix."
-/// or
-///   "TestSuite/Prefix.    # TypeParam = .+"
+/// definition, e,g.,
+/// * "TestSuite."
+/// * "TestSuite/Prefix.", or
+/// * "TestSuite/Prefix.    # TypeParam = .+"
 const std::string testsuite_expr =
     name_expr + "\\.([[:space:]]+# TypeParam = .+)?";
 
 /// A complete regular expression representing a line with a test case
-/// definition.
-///
-/// e.g.,
-///   "  TestCase"
-/// or
-///   "  TestCase/0"
-/// or
-///   "  TestCase/0  # GetParam() = 4"
+/// definition, e,g.,
+/// * "  TestCase"
+/// * "  TestCase/0"
+/// * "  TestCase/0  # GetParam() = 4"
 const std::string testcase_expr =
     "  " + name_expr + "([[:space:]]+# GetParam\\(\\) = .+)?";
+
+const std::regex testcase_re(testcase_expr);
+const std::regex testsuite_re(testsuite_expr);
 
 }  // anonymous namespace
 
@@ -88,13 +83,11 @@ const std::string testcase_expr =
 model::test_cases_map
 engine::parse_googletest_list(std::istream& input)
 {
-    std::regex testcase_re(testcase_expr), testsuite_re(testsuite_expr);
-    std::smatch match;
-    std::string line;
-    std::string testcase_name, test_suite;
+    std::string line, test_suite;
 
     model::test_cases_map_builder test_cases_builder;
     while (std::getline(input, line).good()) {
+        std::smatch match;
         if (std::regex_match(line, match, testcase_re)) {
             std::string test_case;
 
@@ -107,9 +100,10 @@ engine::parse_googletest_list(std::istream& input)
         } else if (std::regex_match(line, match, testsuite_re)) {
             test_suite = std::string(match[1]) +
                          testsuite_testcase_separator;
+        } else {
+            /// ignore the line; something might have used output a diagnostic
+            /// message to stdout, e.g., gtest_main.
         }
-        // else, ignore the line; something might have used output a diagnostic
-        // message to stdout, e.g., gtest_main.
     }
     const model::test_cases_map test_cases = test_cases_builder.build();
     if (test_cases.empty()) {

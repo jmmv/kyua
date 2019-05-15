@@ -66,16 +66,17 @@ namespace {
 /// Basename of the file containing the result written by the googletest
 /// testcase.
 ///
-/// TODO: use more structured output format someday, like the googletest's JSON
-/// or XML format.
+/// TODO: Use more structured output format someday, like the googletest's JSON
+/// or XML format to avoid dealing with upstream formatting changes, as there's
+/// no guarantee that the output format (which is more or less custom/freeform)
+/// won't change in the future, making compatibility with all versions
+/// potentially difficult to scrape for.
 ///
 /// Using either format will require pulling in a third party library and
-/// understanding the schema of the format, as it stands in 1.9.0,
+/// understanding the schema of the format. As it stands in 1.9.0,
 /// googletest doesn't document this expectation very well and instead seems
 /// to rely on third-party solutions for doing structured output via the
 /// listener interfaces.
-///
-///static const char* result_name = "result.googletest";
 
 
 /// Magic numbers returned by exec_list when exec(2) fails.
@@ -97,13 +98,15 @@ enum list_exit_code {
 ///
 /// \param test_program The test program to execute.
 void
-engine::googletest_interface::exec_list(const model::test_program& test_program,
-                                 const config::properties_map& /*vars*/) const
+engine::googletest_interface::exec_list(
+                                  const model::test_program& test_program,
+                                  const config::properties_map& /*vars*/) const
 {
-    process::args_vector args;
+    process::args_vector args{
+        "--gtest_color=no",
+        "--gtest_list_tests"
+    };
 
-    args.push_back("--gtest_color=no");
-    args.push_back("--gtest_list_tests");
     try {
         process::exec_unsafe(test_program.absolute_path(), args);
     } catch (const process::system_error& e) {
@@ -182,17 +185,10 @@ engine::googletest_interface::exec_test(const model::test_program& test_program,
         utils::setenv(F("TEST_ENV_%s") % (*iter).first, (*iter).second);
     }
 
-    process::args_vector args;
-    args.push_back("--gtest_color=no");
-    /// TODO: use more structured output format someday, like the googletest's
-    /// JSON or XML format.
-    ///
-    /// Using either format will require pulling in a third party library and
-    /// understanding the schema of the format, as it stands in 1.9.0,
-    /// googletest doesn't document this expectation very well and instead seems
-    /// to rely on third-party solutions for doing structured output via the
-    /// listener interfaces.
-    args.push_back(F("--gtest_filter=%s") % (test_case_name));
+    process::args_vector args{
+        "--gtest_color=no",
+        F("--gtest_filter=%s") % (test_case_name)
+    };
     process::exec(test_program.absolute_path(), args);
 }
 

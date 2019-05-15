@@ -50,16 +50,12 @@ namespace units = utils::units;
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__invalid_testcase_definition);
 ATF_TEST_CASE_BODY(parse_googletest_list__invalid_testcase_definition)
 {
-    const std::string text1 =
-        "  \n";
-    const std::string text2 =
-        "  TestcaseWithoutSuite\n";
-    std::istringstream input1(text1);
-    std::istringstream input2(text2);
+    std::istringstream input1("  \n");
 
     ATF_REQUIRE_THROW_RE(engine::format_error, "No test cases",
         engine::parse_googletest_list(input1));
 
+    std::istringstream input2("  TestcaseWithoutSuite\n");
     ATF_REQUIRE_THROW_RE(engine::format_error,
         "Invalid testcase definition: not preceded by a test suite definition",
         engine::parse_googletest_list(input2));
@@ -69,15 +65,13 @@ ATF_TEST_CASE_BODY(parse_googletest_list__invalid_testcase_definition)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__invalid_testsuite_definition);
 ATF_TEST_CASE_BODY(parse_googletest_list__invalid_testsuite_definition)
 {
-    const std::string text1 =
-        "\n";
-    const std::string text2 =
-        "TestSuiteWithoutSeparator\n";
-    std::istringstream input1(text1);
-    std::istringstream input2(text2);
-
+    std::istringstream input1("\n");
     ATF_REQUIRE_THROW_RE(engine::format_error, "No test cases",
         engine::parse_googletest_list(input1));
+
+    std::istringstream input2(
+"TestSuiteWithoutSeparator\n"
+    );
     ATF_REQUIRE_THROW_RE(engine::format_error, "No test cases",
         engine::parse_googletest_list(input2));
 }
@@ -86,8 +80,7 @@ ATF_TEST_CASE_BODY(parse_googletest_list__invalid_testsuite_definition)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__no_test_cases);
 ATF_TEST_CASE_BODY(parse_googletest_list__no_test_cases)
 {
-    const std::string text = "";
-    std::istringstream input(text);
+    std::istringstream input("");
     ATF_REQUIRE_THROW_RE(engine::format_error, "No test cases",
         engine::parse_googletest_list(input));
 }
@@ -96,9 +89,10 @@ ATF_TEST_CASE_BODY(parse_googletest_list__no_test_cases)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__one_test_case);
 ATF_TEST_CASE_BODY(parse_googletest_list__one_test_case)
 {
-    const std::string text =
-        "TestSuite.\n"
-        "  TestCase\n";
+    std::string text =
+"TestSuite.\n"
+"  TestCase\n;"
+    ;
     std::istringstream input(text);
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
@@ -111,9 +105,10 @@ ATF_TEST_CASE_BODY(parse_googletest_list__one_test_case)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__one_parameterized_test_case);
 ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_case)
 {
-    const std::string text =
-        "TestSuite.\n"
-        "  TestCase/0  # GetParam() = 'c'\n";
+    std::string text =
+"TestSuite.\n"
+"  TestCase/0  # GetParam() = 'c'\n"
+    ;
     std::istringstream input(text);
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
@@ -126,9 +121,10 @@ ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_case)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__one_parameterized_test_suite);
 ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_suite)
 {
-    const std::string text =
-        "TestSuite/0.  # TypeParam = int\n"
-        "  TestCase\n";
+    std::string text =
+"TestSuite/0.  # TypeParam = int\n"
+"  TestCase\n"
+    ;
     std::istringstream input(text);
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
@@ -141,10 +137,11 @@ ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_suite)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__one_parameterized_test_case_and_test_suite);
 ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_case_and_test_suite)
 {
-    const std::string text =
-        "TestSuite/0.  # TypeParam = int\n"
-        "  TestCase/0  # GetParam() = \"herp\"\n"
-        "  TestCase/1  # GetParam() = \"derp\"\n";
+    std::string text =
+"TestSuite/0.  # TypeParam = int\n"
+"  TestCase/0  # GetParam() = \"herp\"\n"
+"  TestCase/1  # GetParam() = \"derp\"\n"
+    ;
     std::istringstream input(text);
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
@@ -159,24 +156,25 @@ ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_case_and_test_s
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__many_test_cases);
 ATF_TEST_CASE_BODY(parse_googletest_list__many_test_cases)
 {
-    const std::string text =
-        "FirstTestSuite.\n"
-        "  ATestCase\n"
-        "SecondTestSuite.\n"
-        "  AnotherTestCase\n"
-        "ThirdTestSuite.\n"
-        "  _\n"
-        "FourthTestSuite/0.  # TypeParam = std::list<int>\n"
-        "  TestCase\n"
-        "FourthTestSuite/1.  # TypeParam = std::list<int>\n"
-        "  TestCase\n"
-        "FifthTestSuite.\n"
-        "  TestCase/0  # GetParam() = 0\n"
-        "  TestCase/1  # GetParam() = (1, 2, 3)\n"
-        "  TestCase/2  # GetParam() = \"developers. developers\"\n"
-        "SixthTestSuite/0.  # TypeParam = std::map<std::basic_string, int>\n"
-        "  TestCase/0  # GetParam() = 0\n"
-        "  TestCase/1  # GetParam() = (1, 2, 3)\n";
+    std::string text =
+"FirstTestSuite.\n"
+"  ATestCase\n"
+"SecondTestSuite.\n"
+"  AnotherTestCase\n"
+"ThirdTestSuite.\n"
+"  _\n"
+"FourthTestSuite/0.  # TypeParam = std::list<int>\n"
+"  TestCase\n"
+"FourthTestSuite/1.  # TypeParam = std::list<int>\n"
+"  TestCase\n"
+"FifthTestSuite.\n"
+"  TestCase/0  # GetParam() = 0\n"
+"  TestCase/1  # GetParam() = (1, 2, 3)\n"
+"  TestCase/2  # GetParam() = \"developers. developers\"\n"
+"SixthTestSuite/0.  # TypeParam = std::map<std::basic_string, int>\n"
+"  TestCase/0  # GetParam() = 0\n"
+"  TestCase/1  # GetParam() = (1, 2, 3)\n"
+    ;
     std::istringstream input(text);
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
