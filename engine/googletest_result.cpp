@@ -196,12 +196,13 @@ engine::googletest_result::parse(std::istream& input)
         lines.push_back(line);
     } while (input.good());
 
-    bool capture_context;
+    bool capture_context = false;
     bool valid_output = false;
-    std::smatch matches;
     std::string context, status;
 
     for (auto& line: lines) {
+        std::smatch matches;
+
         if (regex_search(line, matches, disabled_re)) {
             context = matches[1];
             status = "disabled";
@@ -327,44 +328,50 @@ engine::googletest_result::apply(const optional< process::status >& status)
         return *this;
     }
 
-    INV(status);
-    if (_type == googletest_result::broken) {
-        return *this;
-    }
-    if (_type == googletest_result::failed) {
-        if (status.get().exited() &&
-            status.get().exitstatus() == EXIT_FAILURE) {
-            return *this;
+    auto check_status = [&status](bool expect_pass) -> bool {
+        if (!status.get().exited()) {
+            return false;
         }
-    } else {
-        if (status.get().exited() &&
-            status.get().exitstatus() == EXIT_SUCCESS) {
-            return *this;
+        auto exit_status = status.get().exitstatus();
+        if (expect_pass) {
+            return exit_status == EXIT_SUCCESS;
+        } else {
+            return exit_status == EXIT_FAILURE;
         }
-    }
+    };
 
     switch (_type) {
     case googletest_result::broken:
-        /// Tautilogically impossible case; however, clang 8.x doesn't realize
-        /// that this is not possible.
-        INV(false);
+        return *this;
 
     case googletest_result::disabled:
+        if (check_status(true)) {
+            return *this;
+        }
         return googletest_result(googletest_result::broken,
             "Disabled test case should have reported success but " +
             format_status(status.get()));
 
     case googletest_result::failed:
+        if (check_status(false)) {
+            return *this;
+        }
         return googletest_result(googletest_result::broken,
             "Failed test case should have reported failure but " +
             format_status(status.get()));
 
     case googletest_result::skipped:
+        if (check_status(true)) {
+            return *this;
+        }
         return googletest_result(googletest_result::broken,
             "Skipped test case should have reported success but " +
             format_status(status.get()));
 
     case googletest_result::successful:
+        if (check_status(true)) {
+            return *this;
+        }
         return googletest_result(googletest_result::broken,
             "Passed test case should have reported success but " +
             format_status(status.get()));

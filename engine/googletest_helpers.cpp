@@ -97,7 +97,7 @@ test_check_configuration_variables(void)
     };
 
     if (vars == exp_vars) {
-        std::cout << (
+        std::cout <<
 "Note: Google Test filter = Suite.check_configuration_variables\n"
 "[==========] Running 1 test from 1 test case.\n"
 "[----------] Global test environment set-up.\n"
@@ -109,9 +109,9 @@ test_check_configuration_variables(void)
 "[----------] Global test environment tear-down\n"
 "[==========] 1 test from 1 test case ran. (1 ms total)\n"
 "[  PASSED  ] 1 test.\n"
-        );
+        ;
     } else {
-        std::cout << (
+        std::cout <<
 "Note: Google Test filter = Suite.Fails\n"
 "[==========] Running 1 test from 1 test case.\n"
 "[----------] Global test environment set-up.\n"
@@ -131,8 +131,8 @@ test_check_configuration_variables(void)
 "[  FAILED  ] Suite.check_configuration_variables\n"
 "\n"
 " 1 FAILED TEST\n"
-        ) << F("    Expected: %s\nFound: %s\n") % exp_vars % vars;
-        //std::exit(EXIT_FAILURE);
+        << F("    Expected: %s\nFound: %s\n") % exp_vars % vars;
+        std::exit(EXIT_FAILURE);
     }
 }
 
@@ -144,6 +144,7 @@ test_crash(void)
 {
     std::abort();
 }
+
 
 /// A test scenario that reports some tests as failed.
 static void
@@ -171,7 +172,6 @@ test_fail(void)
     );
     std::exit(EXIT_FAILURE);
 }
-
 
 
 /// A test scenario that passes.
@@ -240,9 +240,6 @@ test_timeout(void)
 }
 
 
-}  // anonymous namespace
-
-
 /// Prints out program usage and exits with a non-zero exit code.
 static void
 usage(const char* argv0) {
@@ -255,6 +252,10 @@ usage(const char* argv0) {
               << "\n";
     std::exit(EXIT_FAILURE);
 }
+
+
+}  // anonymous namespace
+
 
 /// Entry point to the test program.
 ///
@@ -277,15 +278,14 @@ main(int argc, char** argv)
 
     char *argv0 = argv[0];
 
-    std::map<std::string, scenario_fn_t> scenarios;
-
-    scenarios["check_configuration_variables"] =
-        test_check_configuration_variables;
-    scenarios["crash"] = test_crash;
-    scenarios["fail"] = test_fail;
-    scenarios["pass"] = test_pass;
-    scenarios["pass_but_exit_failure"] = test_pass_but_exit_failure;
-    scenarios["timeout"] = test_timeout;
+    std::map<std::string, scenario_fn_t> scenarios{
+        { "check_configuration_variables", test_check_configuration_variables },
+        { "crash", test_crash },
+        { "fail", test_fail },
+        { "pass", test_pass },
+        { "pass_but_exit_failure", test_pass_but_exit_failure },
+        { "timeout", test_timeout }
+    };
 
     const bool_option gtest_list_tests_opt(
         "gtest_list_tests", "List tests");

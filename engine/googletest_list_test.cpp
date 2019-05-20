@@ -89,11 +89,10 @@ ATF_TEST_CASE_BODY(parse_googletest_list__no_test_cases)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__one_test_case);
 ATF_TEST_CASE_BODY(parse_googletest_list__one_test_case)
 {
-    std::string text =
+    std::istringstream input(
 "TestSuite.\n"
-"  TestCase\n;"
-    ;
-    std::istringstream input(text);
+"  TestCase\n"
+    );
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
     const model::test_cases_map exp_tests = model::test_cases_map_builder()
@@ -105,11 +104,10 @@ ATF_TEST_CASE_BODY(parse_googletest_list__one_test_case)
 ATF_TEST_CASE_WITHOUT_HEAD(parse_googletest_list__one_parameterized_test_case);
 ATF_TEST_CASE_BODY(parse_googletest_list__one_parameterized_test_case)
 {
-    std::string text =
+    std::istringstream input(
 "TestSuite.\n"
 "  TestCase/0  # GetParam() = 'c'\n"
-    ;
-    std::istringstream input(text);
+    );
     const model::test_cases_map tests = engine::parse_googletest_list(input);
 
     const model::test_cases_map exp_tests = model::test_cases_map_builder()

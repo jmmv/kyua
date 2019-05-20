@@ -99,12 +99,12 @@ enum list_exit_code {
 /// \param test_program The test program to execute.
 void
 engine::googletest_interface::exec_list(
-                                  const model::test_program& test_program,
-                                  const config::properties_map& /*vars*/) const
+    const model::test_program& test_program,
+    const config::properties_map& /*vars*/) const
 {
-    process::args_vector args{
+    const process::args_vector args{
         "--gtest_color=no",
-        "--gtest_list_tests"
+        "--gtest_list_tests",
     };
 
     try {
@@ -132,9 +132,9 @@ engine::googletest_interface::exec_list(
 /// \throw error If there is a problem parsing the test case list.
 model::test_cases_map
 engine::googletest_interface::parse_list(
-                                  const optional< process::status >& status,
-                                  const fs::path& stdout_path,
-                                  const fs::path& /* stderr_path */) const
+    const optional< process::status >& status,
+    const fs::path& stdout_path,
+    const fs::path& /* stderr_path */) const
 {
     if (!status)
         throw engine::error("Test case list timed out");
@@ -175,10 +175,11 @@ engine::googletest_interface::parse_list(
 /// \param test_case_name Name of the test case to invoke.
 /// \param vars User-provided variables to pass to the test program.
 void
-engine::googletest_interface::exec_test(const model::test_program& test_program,
-                                 const std::string& test_case_name,
-                                 const config::properties_map& vars,
-                                 const fs::path& /* control_directory */) const
+engine::googletest_interface::exec_test(
+    const model::test_program& test_program,
+    const std::string& test_case_name,
+    const config::properties_map& vars,
+    const fs::path& /* control_directory */) const
 {
     for (config::properties_map::const_iterator iter = vars.begin();
          iter != vars.end(); ++iter) {

@@ -82,20 +82,18 @@ engine::parse_googletest_list(std::istream& input)
     while (std::getline(input, line).good()) {
         std::smatch match;
         if (std::regex_match(line, match, testcase_re)) {
-            std::string test_case;
-
             if (test_suite.empty()) {
                 throw format_error("Invalid testcase definition: not preceded "
                                    "by a test suite definition");
             }
-            test_case = std::string(match[1]);
+            std::string test_case(match[1]);
             test_cases_builder.add(test_suite + test_case);
         } else if (std::regex_match(line, match, testsuite_re)) {
             test_suite = std::string(match[1]) +
                          testsuite_testcase_separator;
         } else {
-            /// ignore the line; something might have used output a diagnostic
-            /// message to stdout, e.g., gtest_main.
+            // Ignore the line; something might have used output a diagnostic
+            // message to stdout, e.g., gtest_main.
         }
     }
     const model::test_cases_map test_cases = test_cases_builder.build();
