@@ -167,7 +167,8 @@ const char skipped_message[] = (
 );
 
 PARSE(skipped,
-      engine::googletest_result::skipped, NULL,
+      engine::googletest_result::skipped,
+      engine::bogus_googletest_skipped_nul_message.c_str(),
       skipped_message
 );
 

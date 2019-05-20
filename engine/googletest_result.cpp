@@ -236,8 +236,9 @@ engine::googletest_result::parse(std::istream& input)
         context = invalid_output_message;
         status = "broken";
     }
-
-    if (context == "")
+    if (status == "skipped" && context.empty())
+        context = bogus_googletest_skipped_nul_message;
+    if (context.empty())
         return parse_without_reason(status, context);
     else
         return parse_with_reason(status, context);

@@ -100,6 +100,12 @@ model::test_result calculate_googletest_result(
     const utils::fs::path&);
 
 
+/// A bogus identifier for nul reasons provided by the test writer.
+///
+/// TODO: Support nul messages with skipped results in the schema, etc.
+const std::string bogus_googletest_skipped_nul_message = "\n";
+
+
 }  // namespace engine
 
 #endif  // !defined(ENGINE_GOOGLETEST_RESULT_HPP)
