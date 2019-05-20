@@ -51,18 +51,6 @@ const std::string name_expr = "([[:alpha:][:digit:]_]+[[:alpha:][:digit:]_/]*)";
 /// The separator between a test suite and a test case.
 const std::string testsuite_testcase_separator = ".";
 
-/// A complete regular expression representing a line with a test case
-/// definition, e,g., "  TestCase",  "  TestCase/0", or
-/// "  TestCase/0  # GetParam() = 4".
-const std::regex testcase_re(
-    "  " + name_expr + "([[:space:]]+# GetParam\\(\\) = .+)?");
-
-/// A complete regular expression representing a line with a test suite
-/// definition, e,g., * "TestSuite.", "TestSuite/Prefix.", or
-/// "TestSuite/Prefix.    # TypeParam = .+".
-const std::regex testsuite_re(
-    name_expr + "\\.([[:space:]]+# TypeParam = .+)?");
-
 }  // anonymous namespace
 
 
@@ -77,6 +65,22 @@ model::test_cases_map
 engine::parse_googletest_list(std::istream& input)
 {
     std::string line, test_suite;
+
+    // TODO: These were moved here from the anonymous namespace because of a
+    // Doxygen bug that's reproducible with the version used by Travis CI.
+    //
+    /// A complete regular expression representing a line with a test case
+    /// definition, e,g., "  TestCase",  "  TestCase/0", or
+    /// "  TestCase/0  # GetParam() = 4".
+    const std::regex testcase_re(
+        "  " + name_expr + "([[:space:]]+# GetParam\\(\\) = .+)?");
+
+    /// A complete regular expression representing a line with a test suite
+    /// definition, e,g., * "TestSuite.", "TestSuite/Prefix.", or
+    /// "TestSuite/Prefix.    # TypeParam = .+".
+    const std::regex testsuite_re(
+        name_expr + "\\.([[:space:]]+# TypeParam = .+)?");
+    // END TODO
 
     model::test_cases_map_builder test_cases_builder;
     while (std::getline(input, line).good()) {
