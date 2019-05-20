@@ -53,12 +53,23 @@ using utils::optional;
 
 namespace {
 
+/// Internal string for specifying invalid output.
 const std::string invalid_output_message = "invalid output";
-const std::regex disabled_re(R"RE((YOU HAVE [[:digit:]]+ DISABLED TESTS?))RE");
+
+/// Regular expression for disabled tests line.
+const std::regex disabled_re(
+    R"RE((YOU HAVE [[:digit:]]+ DISABLED TESTS?))RE"
+);
+
+/// Regular expression for starting sentinel of results block.
 const std::regex starting_sentinel_re(
-    R"(\[[[:space:]]+RUN[[:space:]]+\][[:space:]]+[A-Za-z0-9]+\.[A-Za-z0-9]+)");
+    R"(\[[[:space:]]+RUN[[:space:]]+\][[:space:]]+[A-Za-z0-9]+\.[A-Za-z0-9]+)"
+);
+
+/// Regular expression for ending sentinel of results block.
 const std::regex ending_sentinel_re(
-    R"RE(\[[[:space:]]+(FAILED|OK|SKIPPED)[[:space:]]+\])RE");
+    R"RE(\[[[:space:]]+(FAILED|OK|SKIPPED)[[:space:]]+\])RE"
+);
 
 /// Parses a test result that does not accept a reason.
 ///

@@ -51,24 +51,17 @@ const std::string name_expr = "([[:alpha:][:digit:]_]+[[:alpha:][:digit:]_/]*)";
 /// The separator between a test suite and a test case.
 const std::string testsuite_testcase_separator = ".";
 
-/// A complete regular expression representing a line with a test suite
-/// definition, e,g.,
-/// * "TestSuite."
-/// * "TestSuite/Prefix.", or
-/// * "TestSuite/Prefix.    # TypeParam = .+"
-const std::string testsuite_expr =
-    name_expr + "\\.([[:space:]]+# TypeParam = .+)?";
-
 /// A complete regular expression representing a line with a test case
-/// definition, e,g.,
-/// * "  TestCase"
-/// * "  TestCase/0"
-/// * "  TestCase/0  # GetParam() = 4"
-const std::string testcase_expr =
-    "  " + name_expr + "([[:space:]]+# GetParam\\(\\) = .+)?";
+/// definition, e,g., "  TestCase",  "  TestCase/0", or
+/// "  TestCase/0  # GetParam() = 4".
+const std::regex testcase_re(
+    "  " + name_expr + "([[:space:]]+# GetParam\\(\\) = .+)?");
 
-const std::regex testcase_re(testcase_expr);
-const std::regex testsuite_re(testsuite_expr);
+/// A complete regular expression representing a line with a test suite
+/// definition, e,g., * "TestSuite.", "TestSuite/Prefix.", or
+/// "TestSuite/Prefix.    # TypeParam = .+".
+const std::regex testsuite_re(
+    name_expr + "\\.([[:space:]]+# TypeParam = .+)?");
 
 }  // anonymous namespace
 
